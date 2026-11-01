@@ -41,8 +41,8 @@ p{color:var(--tx2)}
 .r{text-align:right;margin-left:auto}.r b{font-family:var(--num);font-size:17px}
 .pill{background:linear-gradient(90deg,var(--acc),var(--acc2));color:#fff;border-radius:99px;padding:2px 11px;font:700 13px var(--num);white-space:nowrap}
 .search{display:flex;flex-direction:column;gap:12px}
-input{width:100%;background:var(--card);border:1px solid var(--card-b);color:var(--tx);border-radius:18px;padding:15px 18px;font:inherit}
-input:focus{outline:none;border-color:var(--acc);box-shadow:0 0 0 4px var(--glow1)}
+input,select{width:100%;background:var(--card);border:1px solid var(--card-b);color:var(--tx);border-radius:18px;padding:15px 18px;font:inherit}
+input:focus,select:focus{outline:none;border-color:var(--acc);box-shadow:0 0 0 4px var(--glow1)}
 .btn{border:0;border-radius:18px;padding:15px;font:inherit;font-weight:700;color:#fff;background:linear-gradient(90deg,var(--acc),var(--acc2));box-shadow:0 10px 22px -10px var(--acc2)}
 .price{font:800 50px/1.05 var(--num);letter-spacing:-.01em;display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-top:4px}
 .chg{font:700 15px var(--num);padding:3px 11px;border-radius:99px;background:rgba(255,255,255,.07)}
@@ -97,6 +97,24 @@ nav button.on::before{content:"";position:absolute;top:0;left:32%;right:32%;heig
   <section class="view" id="v-watch">
     <div class="card" id="wl"></div>
   </section>
+  <section class="view" id="v-pf">
+    <div id="pfs"></div>
+    <div class="card"><h3><i class="ic">＋</i>記一筆交易</h3><div class="search">
+      <input id="tc" placeholder="股號，例如 2330" inputmode="numeric">
+      <select id="tt"><option value="B">買進</option><option value="S">賣出</option></select>
+      <input id="tq" type="number" inputmode="decimal" placeholder="股數（1 張＝1000 股）">
+      <input id="tp" type="number" inputmode="decimal" step="any" placeholder="成交價">
+      <input id="td" type="date"><button class="btn" data-act="tx">新增交易</button>
+      <small>手續費 0.1425%、賣出證交稅 0.3% 會自動估算；配股可記成「價格 0 的買進」。</small></div></div>
+    <div class="card"><h3><i class="ic">＄</i>資金進出</h3><div class="search">
+      <select id="ct"><option value="1">入金</option><option value="-1">出金</option></select>
+      <input id="ca" type="number" inputmode="decimal" placeholder="金額"><input id="cd" type="date">
+      <button class="btn" data-act="cf">新增</button></div></div>
+    <div class="card" id="pfl"></div>
+    <div class="card"><h3><i class="ic">⇅</i>備份</h3><small>資料只存在這支手機的瀏覽器，換機或清除前請先匯出。</small>
+      <div class="search" style="margin-top:10px"><input id="bk" placeholder="匯出後會顯示在這；匯入時貼在這">
+      <button class="btn" data-act="exp">匯出</button><button class="btn" data-act="imp">匯入</button></div></div>
+  </section>
   <section class="view" id="v-me">
     <div class="card"><h2>關於本站</h2><small>資料每個交易日收盤後自動更新，來源為證交所公開資料。若讀不到資料，頁面會改顯示內建的示範數字。</small></div>
   </section>
@@ -105,6 +123,7 @@ nav button.on::before{content:"";position:absolute;top:0;left:32%;right:32%;heig
 <nav id="nav">
   <button data-tab="home" class="on"><span>⌂</span>首頁</button>
   <button data-tab="search"><span>⌕</span>搜尋</button>
+  <button data-tab="pf"><span>＄</span>持股</button>
   <button data-tab="watch"><span>☆</span>自選</button>
   <button data-tab="me"><span>☺</span>我的</button>
 </nav>
@@ -190,7 +209,7 @@ function analyze(s){
 function show(tab){
   document.querySelectorAll(".view").forEach(v=>v.classList.toggle("on",v.id==="v-"+tab));
   document.querySelectorAll("nav button").forEach(b=>b.classList.toggle("on",b.dataset.tab===tab));
-  if(tab==="watch")watch();window.scrollTo(0,0);
+  if(tab==="watch")watch();if(tab==="pf")pf();window.scrollTo(0,0);
 }
 function open(c){
   cur=S.find(s=>s.c===c);if(!cur)return;
@@ -215,12 +234,63 @@ document.addEventListener("click",e=>{
 $("go").addEventListener("click",find);
 document.addEventListener("input",e=>{if(e.target.id==="note"&&cur)setNote(cur.c,e.target.value)});
 $("q").addEventListener("keydown",e=>{if(e.key==="Enter")find()});
+
+let PF={tx:[],cf:[]},DV={};
+try{PF=Object.assign(PF,JSON.parse(localStorage.getItem("pf")||"{}"))}catch(e){}
+const savePF=()=>{try{localStorage.setItem("pf",JSON.stringify(PF))}catch(e){}};
+const today=()=>new Date(Date.now()+288e5).toISOString().slice(0,10);
+const fee=(t)=>Math.round(t.q*t.p*0.001425)+(t.t==="S"?Math.round(t.q*t.p*0.003):0);
+function calc(){
+  const T=PF.tx.slice().sort((a,b)=>a.d<b.d?-1:a.d>b.d?1:0),pos={},dl=[];
+  let cash=0,real=0,div=0,inflow=0;
+  PF.cf.forEach(x=>{cash+=x.a;inflow+=x.a});
+  T.forEach(t=>{const o=pos[t.c]||(pos[t.c]={q:0,cost:0}),f=fee(t);
+    if(t.t==="B"){o.q+=t.q;o.cost+=t.q*t.p+f;cash-=t.q*t.p+f}
+    else{const avg=o.q?o.cost/o.q:0,net=t.q*t.p-f;real+=net-avg*t.q;o.cost-=avg*t.q;o.q-=t.q;cash+=net}});
+  Object.keys(pos).forEach(c=>(DV[c]||[]).forEach(([ex,cs])=>{
+    if(ex>today())return;
+    const held=T.filter(t=>t.c===c&&t.d<ex).reduce((a,t)=>a+(t.t==="B"?t.q:-t.q),0);
+    if(held>0){const amt=Math.floor(held*cs);div+=amt;cash+=amt;dl.push({c,ex,held,cs,amt})}}));
+  let mv=0,unr=0;
+  const list=Object.keys(pos).filter(c=>pos[c].q>0).map(c=>{
+    const o=pos[c],s=S.find(x=>x.c===c),p=s?s.p:null,v=p==null?null:p*o.q;
+    if(v!=null){mv+=v;unr+=v-o.cost}return{c,n:s?s.n:c,q:o.q,avg:o.cost/o.q,p,v,pl:v==null?null:v-o.cost}});
+  return{cash,real,div,mv,unr,inflow,list,dl,T};
+}
+const money=x=>(x<0?"-":"")+Math.abs(Math.round(x)).toLocaleString();
+const pc=x=>`<span class="${x>=0?"up":"dn"}">${x>0?"+":""}${money(x)}</span>`;
+function pf(){
+  const r=calc(),tot=r.cash+r.mv,all=r.unr+r.real+r.div;
+  $("pfs").innerHTML=`<div class="card hero"><small>總資產（現金＋持股市值）</small><div class="price">${money(tot)}</div>
+  <ul><li>現金 ${money(r.cash)}　持股市值 ${money(r.mv)}</li><li>未實現損益 ${pc(r.unr)}</li><li>已實現損益 ${pc(r.real)}</li><li>累計配息 ${pc(r.div)}</li>
+  <li>合計損益 ${pc(all)}　淨投入資金 ${money(r.inflow)}</li></ul></div>`;
+  const rows=r.list.map(x=>`<div class="row" data-c="${x.c}"><span class="bd">${x.c}</span><div><b>${esc(x.n)}</b><small>${nv(x.q)} 股 ｜ 均價 ${fx(x.avg)}</small></div><div class="r"><b>${x.p==null?"—":fx(x.p)}</b><small>${x.pl==null?"":pc(x.pl)}</small></div></div>`).join("");
+  const dv=r.dl.slice().reverse().map(x=>`<li>${x.ex} ${x.c}：${nv(x.held)} 股 × ${x.cs} ＝ ${money(x.amt)}</li>`).join("");
+  const rec=[...PF.tx.map((t,i)=>({d:t.d,k:"tx",i,s:`${t.t==="B"?"買":"賣"} ${t.c} ${nv(t.q)} 股 @ ${t.p}`})),...PF.cf.map((x,i)=>({d:x.d,k:"cf",i,s:`${x.a>0?"入金":"出金"} ${money(Math.abs(x.a))}`}))].sort((a,b)=>a.d<b.d?1:-1).slice(0,30)
+    .map(x=>`<li>${x.d} ${esc(x.s)} <a data-act="del" data-k="${x.k}" data-i="${x.i}" style="color:var(--acc);cursor:pointer">刪除</a></li>`).join("");
+  $("pfl").innerHTML=`<h3><i class="ic">▤</i>目前持股</h3>${rows||'<small>還沒有持股。</small>'}
+  <h3 style="margin-top:16px"><i class="ic">％</i>配息（依除權息日持有股數自動計算）</h3>${dv?"<ul>"+dv+"</ul>":'<small>尚無已除息的配息紀錄。</small>'}
+  <small>以除息日計入現金，實際入帳日通常晚幾週；未計二代健保補充保費與配股。</small>
+  <h3 style="margin-top:16px"><i class="ic">☰</i>最近紀錄</h3>${rec?"<ul>"+rec+"</ul>":'<small>無。</small>'}`;
+}
+document.addEventListener("click",e=>{
+  const t=e.target.closest("[data-act]");if(!t)return;const a=t.dataset.act;
+  if(a==="tx"){const c=$("tc").value.trim(),q=+$("tq").value,p=+$("tp").value,d=$("td").value||today();
+    if(!/^\d{4}$/.test(c)||!(q>0)||!(p>=0))return alert("請填股號（4 碼）、股數、價格");
+    PF.tx.push({c,t:$("tt").value,q,p,d});}
+  else if(a==="cf"){const v=+$("ca").value;if(!(v>0))return alert("請填金額");PF.cf.push({a:v*$("ct").value,d:$("cd").value||today()});}
+  else if(a==="del"){PF[t.dataset.k].splice(+t.dataset.i,1)}
+  else if(a==="exp"){$("bk").value=JSON.stringify(PF);return}
+  else if(a==="imp"){try{const j=JSON.parse($("bk").value);PF={tx:j.tx||[],cf:j.cf||[]}}catch(err){return alert("格式不正確")}}
+  savePF();pf();
+});
+fetch("data/dividends.json",{cache:"no-cache"}).then(r=>r.ok?r.json():Promise.reject()).then(j=>{DV=j;pf()}).catch(()=>{});
 home();
 fetch("data/screen.json",{cache:"no-cache"}).then(r=>r.ok?r.json():Promise.reject()).then(j=>{
   if(!j.stocks||!j.stocks.length)return;
   S=j.stocks;DATE=j.date;$("tag").textContent="資料日期 "+j.date;
   $("ft").textContent="本網站為個人使用的資料整理，不構成任何投資建議。資料來源為臺灣證券交易所公開資料，為收盤資料，非即時報價。";
-  home();watch();
+  home();watch();pf();
 }).catch(()=>{});
 </script>
 </body>
