@@ -104,6 +104,7 @@ IND = {"01": "水泥工業", "02": "食品工業", "03": "塑膠工業", "04": "
        "27": "通信網路業", "28": "電子零組件業", "29": "電子通路業", "30": "資訊服務業", "31": "其他電子業",
        "35": "綠能環保", "36": "數位雲端", "37": "運動休閒", "38": "居家生活"}
 NEWS = DATA / "news.json"
+DIV = DATA / "dividends.json"
 
 
 def openapi(path):
@@ -174,6 +175,35 @@ def update_news():
         old[code] = sorted(old[code], key=lambda x: x[0], reverse=True)[:5]
     NEWS.write_text(json.dumps(old, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
     return old
+
+
+def first(d, *subs):
+    """欄位名稱含任一關鍵字就取值（中英文欄名都試）。"""
+    for k, v in d.items():
+        if any(s.lower() in k.lower() for s in subs):
+            return v
+    return None
+
+
+def update_div():
+    """證交所除權除息預告表 → 累積成 {股號: [[除息日, 每股現金股利], ...]}（每日累積，不會消失）"""
+    old = json.loads(DIV.read_text("utf-8")) if DIV.exists() else {}
+    rows = openapi("/exchangeReport/TWT48U_ALL")
+    ok = 0
+    for d in rows:
+        code = str(first(d, "Code", "代號") or "").strip()
+        ex = iso_date(str(first(d, "Date", "除權息日期", "日期") or "").strip())
+        cash = num(first(d, "CashDividend", "現金股利"))
+        if not re.fullmatch(r"\d{4}", code) or not ex or not cash:
+            continue
+        item = [ex, cash]
+        lst = old.setdefault(code, [])
+        lst[:] = [x for x in lst if x[0] != ex] + [item]
+        ok += 1
+    if rows and not ok:
+        print("dividend fields not matched, sample keys:", list(rows[0].keys()), file=sys.stderr)
+    DIV.write_text(json.dumps(old, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+    return ok
 
 
 def load_hist():
@@ -285,6 +315,10 @@ def main():
     except Exception as e:
         print("news failed:", e, file=sys.stderr)
         news = {}
+    try:
+        print("dividends parsed:", update_div())
+    except Exception as e:
+        print("dividends failed:", e, file=sys.stderr)
     print("extra data for", len(extra), "stocks;", len(news), "with news")
     screen = build_screen(rows, fetch_inst(date), date, extra, news)
     (DATA / "screen.json").write_text(json.dumps(screen, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
