@@ -4,50 +4,76 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>我的選股實驗室</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#0a1730;--card:#112448;--card2:#162d57;--line:#24427a;--tx:#e8f0ff;--mute:#8aa3cf;--acc:#2bb8ff;--acc2:#6a5cff;--up:#ff5d6c;--dn:#2fd39b;--warn:#ffb84a;color-scheme:dark;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
-@media (prefers-color-scheme:light){:root:not([data-theme="dark"]){--bg:#eef3fb;--card:#fff;--card2:#f1f5fc;--line:#cdd9ee;--tx:#14213d;--mute:#5b6f93;--up:#d6293b;--dn:#0c9a6b;color-scheme:light}}
-:root[data-theme="dark"]{--bg:#0a1730;--card:#112448;--card2:#162d57;--line:#24427a;--tx:#e8f0ff;--mute:#8aa3cf}
+:root{--bg:#0a1330;--card:rgba(24,40,86,.62);--card-b:rgba(120,160,255,.16);--line:rgba(120,160,255,.14);--tx:#e9f0ff;--tx2:#c5d3f0;--mute:#93a8d2;--acc:#3ac7ff;--acc2:#7b6dff;--up:#ff6b7a;--dn:#3ddcaa;--warn:#ffc766;--glow1:rgba(58,199,255,.16);--glow2:rgba(123,109,255,.2);--sh:rgba(0,0,0,.45);--hero:linear-gradient(155deg,rgba(44,70,142,.85),rgba(22,34,78,.78));--font:"Noto Sans TC",-apple-system,"PingFang TC","Microsoft JhengHei",sans-serif;--num:"Outfit","Noto Sans TC",-apple-system,sans-serif;color-scheme:dark;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:light){:root{--bg:#eef3ff;--card:rgba(255,255,255,.82);--card-b:rgba(70,100,190,.16);--line:rgba(70,100,190,.14);--tx:#14213d;--tx2:#33466d;--mute:#5b6f93;--up:#d6293b;--dn:#0b946a;--warn:#b7791f;--glow1:rgba(58,199,255,.22);--glow2:rgba(123,109,255,.16);--sh:rgba(40,60,120,.18);--hero:linear-gradient(155deg,#fff,#e6eeff);color-scheme:light}}
 *{box-sizing:border-box}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
-body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.6 -apple-system,"PingFang TC","Noto Sans TC","Microsoft JhengHei",sans-serif;padding-bottom:84px}
+body{margin:0;color:var(--tx);font:16px/1.7 var(--font);padding-bottom:92px;background:radial-gradient(70% 38% at 90% -4%,var(--glow2),transparent 70%),radial-gradient(60% 30% at -5% 32%,var(--glow1),transparent 70%),var(--bg);background-repeat:no-repeat;min-height:100vh}
 body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);background:var(--bg);z-index:10}
-header{position:sticky;top:env(safe-area-inset-top,0px);z-index:9;display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:var(--bg);border-bottom:1px solid var(--line)}
-.logo{display:flex;align-items:center;gap:10px}
-.logo i{width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,var(--acc),var(--acc2));display:grid;place-items:center;font-style:normal;font-weight:800;color:#fff}
-.logo b{display:block;line-height:1.2}.logo small{color:var(--mute);letter-spacing:.15em;font-size:10px}
-.tag{border:1px solid var(--line);border-radius:99px;padding:4px 12px;font-size:12px;color:var(--mute)}
-main{padding:16px;max-width:640px;margin:0 auto}
+:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+header{position:sticky;top:env(safe-area-inset-top,0px);z-index:9;display:flex;align-items:center;justify-content:space-between;padding:12px 18px;background:color-mix(in srgb,var(--bg) 82%,transparent);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-bottom:1px solid var(--line)}
+.logo{display:flex;align-items:center;gap:11px}
+.logo i{width:40px;height:40px;border-radius:14px;background:linear-gradient(135deg,var(--acc),var(--acc2));display:grid;place-items:center;font-style:normal;font-weight:800;color:#fff;box-shadow:0 6px 18px -4px var(--acc2)}
+.logo b{display:block;line-height:1.25;font-size:17px;color:var(--tx)}
+.logo small{color:var(--mute);letter-spacing:.14em;font-size:10px}
+.tag{border:1px solid var(--card-b);background:var(--card);border-radius:99px;padding:4px 12px;font-size:12px;color:var(--mute)}
+main{padding:18px 16px;max-width:640px;margin:0 auto}
 .view{display:none}.view.on{display:block}
-.card{background:linear-gradient(160deg,var(--card2),var(--card));border:1px solid var(--line);border-radius:22px;padding:18px;margin-bottom:16px}
-h2{margin:0 0 6px;font-size:20px}h3{margin:0 0 10px;font-size:15px;color:var(--mute);font-weight:600}
+.card{background:var(--card);border:1px solid var(--card-b);border-radius:24px;padding:20px;margin-bottom:16px;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);box-shadow:0 14px 32px -16px var(--sh)}
+.hero{background:var(--hero);border-radius:30px;position:relative;overflow:hidden;padding:22px}
+.hero::before{content:"";position:absolute;width:280px;height:280px;right:-100px;top:-120px;background:radial-gradient(circle,var(--glow2),transparent 70%);pointer-events:none}
+.hero>*{position:relative}
+.intro{background:linear-gradient(120deg,var(--glow1),var(--glow2));border-radius:26px}
+h2{margin:0 0 6px;font-size:22px;font-weight:700;letter-spacing:.01em}
+h3{display:flex;align-items:center;gap:10px;margin:0 0 12px;font-size:15px;color:var(--tx2);font-weight:700}
+.ic{font-style:normal;width:30px;height:30px;border-radius:10px;display:grid;place-items:center;background:linear-gradient(135deg,var(--glow1),var(--glow2));border:1px solid var(--card-b);font-size:15px}
 small,.mute{color:var(--mute);font-size:13px}
+p{color:var(--tx2)}
 .up{color:var(--up)}.dn{color:var(--dn)}
-.chips{display:flex;gap:8px;overflow-x:auto;padding-bottom:10px;margin-bottom:6px}
-.chip{flex:none;border:1px solid var(--line);background:var(--card);color:var(--tx);border-radius:99px;padding:6px 14px;font:inherit;font-size:14px}
-.chip.on{border-color:var(--acc);color:var(--acc)}
-.row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 4px;border-bottom:1px solid var(--line);cursor:pointer}
-.row:last-child{border:0}.row small{display:block}.r{text-align:right;margin-left:auto}
-.pill{background:linear-gradient(90deg,var(--acc),var(--acc2));color:#fff;border-radius:99px;padding:2px 10px;font-size:13px;font-weight:700}
-.search{display:flex;flex-direction:column;gap:10px}
-input{width:100%;background:var(--card);border:1px solid var(--line);color:var(--tx);border-radius:16px;padding:14px 16px;font:inherit}
-.btn{border:0;border-radius:16px;padding:14px;font:inherit;font-weight:800;color:#06142e;background:linear-gradient(90deg,var(--acc),var(--acc2))}
-.price{font-size:44px;font-weight:800;line-height:1.1}
-.ring{display:block;margin:10px auto}
-.lv{display:flex;justify-content:space-between;align-items:baseline;padding:10px 0;border-bottom:1px solid var(--line)}
-.lv:last-child{border:0}.lv.now{color:var(--acc);font-weight:700}
-.bar{position:relative;height:8px;border-radius:9px;background:linear-gradient(90deg,var(--acc),var(--acc2),var(--warn),var(--up));margin:26px 0 8px}
-.bar i{position:absolute;top:-6px;width:20px;height:20px;border-radius:50%;background:var(--acc);border:3px solid var(--bg);transform:translateX(-50%)}
+.chips{display:flex;gap:8px;overflow-x:auto;padding:2px 2px 12px;margin-bottom:4px;scrollbar-width:none}
+.chip{flex:none;border:1px solid var(--card-b);background:var(--card);color:var(--tx2);border-radius:99px;padding:7px 16px;font:inherit;font-size:14px}
+.chip.on{border-color:transparent;background:linear-gradient(90deg,var(--acc),var(--acc2));color:#fff;font-weight:700;box-shadow:0 6px 16px -6px var(--acc2)}
+.row{display:flex;align-items:center;gap:12px;padding:13px 4px;border-bottom:1px solid var(--line);cursor:pointer}
+.row:last-child{border:0}.row small{display:block;line-height:1.4}.row b{font-weight:600}
+.bd{font:600 13px var(--num);color:var(--acc);background:var(--glow1);border:1px solid var(--card-b);border-radius:10px;padding:4px 0;min-width:54px;text-align:center}
+.r{text-align:right;margin-left:auto}.r b{font-family:var(--num);font-size:17px}
+.pill{background:linear-gradient(90deg,var(--acc),var(--acc2));color:#fff;border-radius:99px;padding:2px 11px;font:700 13px var(--num);white-space:nowrap}
+.search{display:flex;flex-direction:column;gap:12px}
+input{width:100%;background:var(--card);border:1px solid var(--card-b);color:var(--tx);border-radius:18px;padding:15px 18px;font:inherit}
+input:focus{outline:none;border-color:var(--acc);box-shadow:0 0 0 4px var(--glow1)}
+.btn{border:0;border-radius:18px;padding:15px;font:inherit;font-weight:700;color:#fff;background:linear-gradient(90deg,var(--acc),var(--acc2));box-shadow:0 10px 22px -10px var(--acc2)}
+.price{font:800 50px/1.05 var(--num);letter-spacing:-.01em;display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-top:4px}
+.chg{font:700 15px var(--num);padding:3px 11px;border-radius:99px;background:rgba(255,255,255,.07)}
+.chg.up{background:rgba(255,107,122,.15)}.chg.dn{background:rgba(61,220,170,.15)}
+.ring{display:block;margin:12px auto 6px;filter:drop-shadow(0 0 14px var(--glow2))}
+.arc{animation:draw 1.1s cubic-bezier(.2,.8,.2,1)}
+@keyframes draw{from{stroke-dasharray:0 400}}
+@media (prefers-reduced-motion:reduce){.arc{animation:none}}
+.lv{position:relative;display:flex;justify-content:space-between;align-items:baseline;padding:11px 0 11px 16px;border-bottom:1px solid var(--line)}
+.lv:last-child{border:0}
+.lv::before{content:"";position:absolute;left:0;top:11px;bottom:11px;width:4px;border-radius:4px;background:var(--mute)}
+.lv.res::before{background:var(--up)}.lv.sup::before{background:var(--dn)}
+.lv.now{color:var(--acc);font-weight:700}.lv.now::before{background:var(--acc);box-shadow:0 0 10px var(--acc)}
+.lv span:last-child{font-family:var(--num);font-weight:600}
+.bar{position:relative;height:10px;border-radius:9px;background:linear-gradient(90deg,var(--acc),var(--acc2),var(--warn),var(--up));margin:32px 0 10px;box-shadow:0 0 18px -4px var(--acc2)}
+.bar i{position:absolute;top:-5px;width:20px;height:20px;border-radius:50%;background:#fff;border:3px solid var(--bg);box-shadow:0 0 0 2px var(--acc),0 0 14px var(--acc);transform:translateX(-50%)}
 .bar-l{display:flex;justify-content:space-between}
-ul{padding-left:20px;margin:6px 0}li{margin:6px 0}
-details{border-bottom:1px solid var(--line);padding:12px 0}details:last-child{border:0}
-summary{font-weight:700;cursor:pointer}
-.star{float:right;background:none;border:1px solid var(--line);color:var(--warn);border-radius:99px;padding:2px 12px;font:inherit;font-size:14px}
-nav{position:fixed;left:0;right:0;bottom:0;z-index:9;display:flex;background:var(--bg);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px)}
-nav button{flex:1;background:none;border:0;color:var(--mute);padding:10px 0 8px;font:inherit;font-size:12px}
-nav button span{display:block;font-size:20px;line-height:1.2}
-nav button.on{color:var(--acc)}
-.foot{color:var(--mute);font-size:12px;padding:8px 4px 24px}
+ul{padding-left:18px;margin:6px 0}li{margin:7px 0;color:var(--tx2)}li::marker{color:var(--acc)}
+details{border-bottom:1px solid var(--line);padding:14px 0}details:last-child{border:0;padding-bottom:2px}
+summary{font-weight:700;cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center}
+summary::-webkit-details-marker{display:none}
+summary::after{content:"＋";color:var(--acc);font-weight:400}
+details[open] summary::after{content:"－"}
+details>*:not(summary){margin-top:10px}
+.star{float:right;background:var(--card);border:1px solid var(--card-b);color:var(--warn);border-radius:99px;padding:3px 14px;font:inherit;font-size:14px}
+nav{position:fixed;left:0;right:0;bottom:0;z-index:9;display:flex;background:color-mix(in srgb,var(--bg) 86%,transparent);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px)}
+nav button{position:relative;flex:1;background:none;border:0;color:var(--mute);padding:11px 0 8px;font:inherit;font-size:12px}
+nav button span{display:block;font-size:21px;line-height:1.2}
+nav button.on{color:var(--acc);font-weight:700}
+nav button.on::before{content:"";position:absolute;top:0;left:32%;right:32%;height:3px;border-radius:0 0 4px 4px;background:linear-gradient(90deg,var(--acc),var(--acc2));box-shadow:0 0 12px var(--acc)}
+.foot{color:var(--mute);font-size:12px;line-height:1.7;padding:8px 6px 24px}
 </style>
 </head>
 <body>
@@ -57,7 +83,7 @@ nav button.on{color:var(--acc)}
 </header>
 <main>
   <section class="view on" id="v-home">
-    <div class="card"><h2>選股篩選</h2><small>點選條件，快速找出符合的台股標的。</small></div>
+    <div class="card intro"><h2>選股篩選</h2><small>點選條件，快速找出符合的台股標的。</small></div>
     <div class="chips" id="chips"></div>
     <div class="card" id="list"></div>
   </section>
@@ -101,7 +127,7 @@ const $=id=>document.getElementById(id);
 const fx=n=>n.toFixed(2),sg=n=>(n>=0?"+":"")+n.toFixed(2)+"%",cl=n=>n>=0?"up":"dn";
 const sc=s=>Math.round((s.sc[0]+s.sc[1]+s.sc[2])/3);
 const dist=(v,p)=>sg((v/p-1)*100);
-function row(s){return `<div class="row" data-c="${s.c}"><div><b>${s.n}</b><small>${s.c}</small></div><div class="r"><b class="${cl(s.ch)}">${fx(s.p)}</b><small class="${cl(s.ch)}">${sg(s.ch)}</small></div><span class="pill">${sc(s)} 分</span></div>`}
+function row(s){return `<div class="row" data-c="${s.c}"><span class="bd">${s.c}</span><div><b>${s.n}</b><small>${esc(s.ind||"")}</small></div><div class="r"><b class="${cl(s.ch)}">${fx(s.p)}</b><small class="${cl(s.ch)}">${sg(s.ch)}</small></div><span class="pill">${sc(s)} 分</span></div>`}
 function home(){
   $("chips").innerHTML=FL.map(f=>`<button class="chip ${f[0]===filt?"on":""}" data-f="${f[0]}">${f[1]}</button>`).join("");
   const all=S.filter(F[filt]).sort((x,y)=>sc(y)-sc(x)),a=all.slice(0,50);
@@ -111,33 +137,55 @@ function watch(){
   const a=S.filter(s=>W.includes(s.c));
   $("wl").innerHTML=a.length?a.map(row).join(""):"<small>還沒有自選股，到個股頁按「☆ 加入自選」。</small>";
 }
+const nv=(x,d=0)=>x==null?"—":Number(x).toLocaleString(undefined,{maximumFractionDigits:d});
+const sgn=x=>x==null?"—":(x>0?"+":"")+Number(x).toLocaleString();
+const esc=t=>String(t).replace(/[<>&"]/g,"");
+let NT={};try{NT=JSON.parse(localStorage.getItem("n")||"{}")}catch(e){}
+function setNote(c,v){NT[c]=v;try{localStorage.setItem("n",JSON.stringify(NT))}catch(e){}}
+function chipH(s){
+  if(s.mf==null)return '<p class="mute">尚無資料。</p>';
+  return `<ul><li>融資餘額 ${nv(s.mf)} 張，較前一日 ${sgn(s.mfc)} 張</li><li>融券餘額 ${nv(s.ms)} 張，較前一日 ${sgn(s.msc)} 張</li><li class="mute">借券資料本版尚未提供。</li></ul>`;
+}
+function fundH(s){
+  const l=[];
+  if(s.rev!=null)l.push(`${esc(s.ym)} 月營收 ${nv(s.rev/1e5,2)} 億元，月增 ${s.mom==null?"—":sg(s.mom)}，年增 ${s.yoy==null?"—":sg(s.yoy)}`);
+  if(s.pe!=null||s.pb!=null||s.dy!=null)l.push(`本益比 ${nv(s.pe,2)}｜股價淨值比 ${nv(s.pb,2)}｜殖利率 ${nv(s.dy,2)}%`);
+  return l.length?"<ul>"+l.map(x=>`<li>${x}</li>`).join("")+"</ul>":'<p class="mute">尚無資料。</p>';
+}
+function indH(s){
+  const peers=s.ind?S.filter(x=>x.ind===s.ind&&x.c!==s.c).sort((a,b)=>sc(b)-sc(a)).slice(0,3):[];
+  const nw=(s.nw||[]).map(n=>`<li>${esc(n[0])}　${esc(n[1])}</li>`).join("");
+  return `<ul><li>產業別：${s.ind?esc(s.ind):"—"}</li>${peers.length?`<li>同產業評分較高：${peers.map(x=>`<span data-c="${x.c}" style="color:var(--acc);cursor:pointer">${esc(x.n)}</span>`).join("、")}</li>`:""}</ul>
+  <h3 style="margin-top:12px">近期重大訊息</h3>${nw?"<ul>"+nw+"</ul>":'<p class="mute">近期沒有重大訊息。</p>'}
+  <h3 style="margin-top:12px">我的題材筆記</h3><input id="note" placeholder="例如：AI 伺服器、軍工（自動儲存）" value="${esc(NT[s.c]||"")}">`;
+}
 function analyze(s){
   const t=sc(s),C=2*Math.PI*52,pct=Math.max(0,Math.min(100,(s.p-s.lo)/(s.hi-s.lo)*100));
   const zone=pct<33?"觀察區":pct<66?"中性區":"偏熱區";
   const lv=[["第二壓力",s.r[1]],["第一壓力",s.r[0]],["現價",s.p],["近端支撐",s.s[0]],["第二支撐",s.s[1]]].sort((a,b)=>b[1]-a[1]);
   const inW=W.includes(s.c);
   const trend=s.p>s.ma?"收盤在 20 日均線之上":"收盤低於 20 日均線 "+fx(s.ma);
-  return `<div class="card">
+  return `<div class="card hero">
   <button class="star" data-star="${s.c}">${inW?"★ 已自選":"☆ 加入自選"}</button>
   <h2>${s.n} <small>${s.c}</small></h2>
-  <div class="price">${fx(s.p)} <span class="${cl(s.ch)}" style="font-size:18px">${sg(s.ch)}</span></div>
+  <div class="price">${fx(s.p)} <span class="chg ${cl(s.ch)}">${sg(s.ch)}</span></div>
   <small>資料日期：${DATE}</small>
-  <svg class="ring" width="140" height="140" viewBox="0 0 120 120"><circle cx="60" cy="60" r="52" fill="none" stroke="var(--line)" stroke-width="10"/><circle cx="60" cy="60" r="52" fill="none" stroke="var(--acc2)" stroke-width="10" stroke-linecap="round" stroke-dasharray="${(t/100*C).toFixed(1)} ${C.toFixed(1)}" transform="rotate(-90 60 60)"/><text x="60" y="58" text-anchor="middle" fill="var(--tx)" font-size="30" font-weight="800">${t}</text><text x="60" y="78" text-anchor="middle" fill="var(--mute)" font-size="11">量價觀察</text></svg>
+  <svg class="ring" width="150" height="150" viewBox="0 0 120 120"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" style="stop-color:var(--acc)"/><stop offset="1" style="stop-color:var(--acc2)"/></linearGradient></defs><circle cx="60" cy="60" r="52" fill="none" stroke="var(--line)" stroke-width="10"/><circle cx="60" cy="60" r="52" fill="none" class="arc" stroke="url(#g)" stroke-width="10" stroke-linecap="round" stroke-dasharray="${(t/100*C).toFixed(1)} ${C.toFixed(1)}" transform="rotate(-90 60 60)"/><text x="60" y="58" text-anchor="middle" fill="var(--tx)" font-size="32" font-weight="800" style="font-family:var(--num)">${t}</text><text x="60" y="78" text-anchor="middle" fill="var(--mute)" font-size="11">量價觀察</text></svg>
   <div class="mute" style="text-align:center">趨勢 ${s.sc[0]} ｜ 法人 ${s.sc[1]} ｜ 量價 ${s.sc[2]}</div></div>
-  <div class="card"><h3>價位分類</h3>${lv.map(l=>`<div class="lv ${l[0]==="現價"?"now":""}"><span>${l[0]}</span><span>${fx(l[1])} <small>${l[0]==="現價"?"":dist(l[1],s.p)}</small></span></div>`).join("")}</div>
-  <div class="card"><h3>現在的位置</h3><h2>${s.n}現在站在哪？</h2>
+  <div class="card"><h3><i class="ic">🎯</i>價位分類</h3>${lv.map(l=>`<div class="lv ${l[0]==="現價"?"now":l[1]>s.p?"res":"sup"}"><span>${l[0]}</span><span>${fx(l[1])} <small>${l[0]==="現價"?"":dist(l[1],s.p)}</small></span></div>`).join("")}</div>
+  <div class="card"><h3><i class="ic">📍</i>現在的位置</h3><h2>${s.n}現在站在哪？</h2>
   <div class="bar"><i style="left:${pct.toFixed(0)}%"></i></div><div class="bar-l mute"><span>觀察區</span><span>偏熱</span></div>
   <p>以近 20 日低點到高點區間衡量，價格位於區間約 ${pct.toFixed(0)}%（${zone}）。</p><small>僅描述價格所在位置，不代表任何買賣建議。</small></div>
-  <div class="card"><h3>今天為什麼動？</h3><ul>
+  <div class="card"><h3><i class="ic">⚡</i>今天為什麼動？</h3><ul>
   <li>${s.ch>=0?"今日收紅":"今日收綠"}：收盤 ${fx(s.p)}，${sg(s.ch)}。</li>
   <li>${s.vr<1?"成交量縮小":"成交量放大"}：約為近 20 日均量的 ${s.vr} 倍。</li>
   <li>外資${s.f>=0?"買超":"賣超"}：合計 ${Math.abs(s.f).toLocaleString()} 張。</li></ul></div>
-  <div class="card"><h3>研究室</h3>
+  <div class="card"><h3><i class="ic">🔬</i>研究室</h3>
   <details><summary>技術面</summary><p class="mute">RSI(14) ${s.rsi}；${trend}。</p></details>
   <details><summary>法人</summary><p class="mute">外資${s.f>=0?"買超":"賣超"} ${Math.abs(s.f).toLocaleString()} 張。</p></details>
-  <details><summary>籌碼（融資融券・借券）</summary><p class="mute">待串接資料來源後顯示。</p></details>
-  <details><summary>基本面・營收</summary><p class="mute">待串接資料來源後顯示。</p></details>
-  <details><summary>產業・題材・公司消息</summary><p class="mute">待串接資料來源後顯示。</p></details></div>`;
+  <details><summary>籌碼（融資融券・借券）</summary>${chipH(s)}</details>
+  <details><summary>基本面・營收</summary>${fundH(s)}</details>
+  <details><summary>產業・題材・公司消息</summary>${indH(s)}</details></div>`;
 }
 function show(tab){
   document.querySelectorAll(".view").forEach(v=>v.classList.toggle("on",v.id==="v-"+tab));
@@ -165,6 +213,7 @@ document.addEventListener("click",e=>{
   }
 });
 $("go").addEventListener("click",find);
+document.addEventListener("input",e=>{if(e.target.id==="note"&&cur)setNote(cur.c,e.target.value)});
 $("q").addEventListener("keydown",e=>{if(e.key==="Enter")find()});
 home();
 fetch("data/screen.json",{cache:"no-cache"}).then(r=>r.ok?r.json():Promise.reject()).then(j=>{
