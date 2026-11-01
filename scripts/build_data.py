@@ -97,6 +97,85 @@ def fetch_inst(date):
     return out
 
 
+IND = {"01": "水泥工業", "02": "食品工業", "03": "塑膠工業", "04": "紡織纖維", "05": "電機機械", "06": "電器電纜",
+       "08": "玻璃陶瓷", "09": "造紙工業", "10": "鋼鐵工業", "11": "橡膠工業", "12": "汽車工業", "14": "建材營造業",
+       "15": "航運業", "16": "觀光餐旅", "17": "金融保險業", "18": "貿易百貨業", "20": "其他", "21": "化學工業",
+       "22": "生技醫療業", "23": "油電燃氣業", "24": "半導體業", "25": "電腦及週邊設備業", "26": "光電業",
+       "27": "通信網路業", "28": "電子零組件業", "29": "電子通路業", "30": "資訊服務業", "31": "其他電子業",
+       "35": "綠能環保", "36": "數位雲端", "37": "運動休閒", "38": "居家生活"}
+NEWS = DATA / "news.json"
+
+
+def openapi(path):
+    j = get_json("https://openapi.twse.com.tw/v1" + path)
+    return j if isinstance(j, list) else []
+
+
+def val(d, *subs, none=()):
+    """用欄位名稱的關鍵字找值，欄位名稱有小差異（- 或 _）也能對上。"""
+    for k, v in d.items():
+        if all(s in k for s in subs) and not any(n in k for n in none):
+            return v
+    return None
+
+
+def fetch_fund():
+    """本益比、股價淨值比、殖利率"""
+    out = {}
+    for d in openapi("/exchangeReport/BWIBBU_ALL"):
+        code = str(d.get("Code") or val(d, "代號") or "").strip()
+        if code:
+            out[code] = dict(pe=num(d.get("PEratio", val(d, "本益比"))), pb=num(d.get("PBratio", val(d, "淨比"))),
+                             dy=num(d.get("DividendYield", val(d, "殖利率"))))
+    return out
+
+
+def fetch_rev():
+    """月營收（仟元）、月增、年增、產業別"""
+    out = {}
+    for d in openapi("/opendata/t187ap05_L"):
+        code = str(val(d, "公司代號") or "").strip()
+        if not code:
+            continue
+        ind = str(val(d, "產業別") or "").strip()
+        out[code] = dict(ind=IND.get(ind.zfill(2), ind) if ind.isdigit() else ind,
+                         ym=str(val(d, "資料年月") or ""),
+                         rev=num(val(d, "當月營收", none=("去年", "上月", "累計"))),
+                         mom=num(val(d, "上月比較增減")),
+                         yoy=num(val(d, "去年同月增減", none=("累計",))))
+    return out
+
+
+def fetch_margin():
+    """融資融券餘額（張）與較前一日變化"""
+    out = {}
+    for d in openapi("/exchangeReport/MI_MARGN"):
+        code = str(val(d, "代號") or "").strip()
+        a, a0 = num(val(d, "融資", "今日餘額")), num(val(d, "融資", "前日餘額"))
+        b, b0 = num(val(d, "融券", "今日餘額")), num(val(d, "融券", "前日餘額"))
+        if code and a is not None:
+            out[code] = dict(mf=a, mfc=None if a0 is None else a - a0, ms=b, msc=None if None in (b, b0) else b - b0)
+    return out
+
+
+def update_news():
+    """每日重大訊息，累積保留每檔最新 5 則"""
+    old = json.loads(NEWS.read_text("utf-8")) if NEWS.exists() else {}
+    for d in openapi("/opendata/t187ap04_L"):
+        code = str(val(d, "公司代號") or "").strip()
+        title = str(val(d, "主旨") or "").strip()
+        day = str(val(d, "發言日期") or "").strip()
+        if not re.fullmatch(r"\d{4}", code) or not title:
+            continue
+        item = [iso_date(day) or day, title[:60]]
+        if item not in old.setdefault(code, []):
+            old[code].append(item)
+    for code in old:
+        old[code] = sorted(old[code], key=lambda x: x[0], reverse=True)[:5]
+    NEWS.write_text(json.dumps(old, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+    return old
+
+
 def load_hist():
     if not HIST.exists():
         return []
@@ -140,7 +219,8 @@ def clip(x):
     return int(max(0, min(100, round(x))))
 
 
-def build_screen(rows, inst, date):
+def build_screen(rows, inst, date, extra=None, news=None):
+    extra, news = extra or {}, news or {}
     by = {}
     for r in sorted(rows, key=lambda r: r["date"]):
         by.setdefault(r["code"], []).append(r)
@@ -166,7 +246,7 @@ def build_screen(rows, inst, date):
         stocks.append(dict(c=code, n=rs[-1]["name"], p=round(p, 2), ch=round(ch, 2), vr=round(vr, 2),
                            rsi=round(rsi14(c), 1), ma=round(ma20, 2), f=f,
                            lo=round(min(l[-20:]), 2), hi=round(max(h[-20:]), 2),
-                           s=pick(cands, p, True), r=pick(cands, p, False), sc=[trend, chip, pv]))
+                           s=pick(cands, p, True), r=pick(cands, p, False), sc=[trend, chip, pv], nw=news.get(code, [])[:3], **extra.get(code, {})))
     return {"date": date, "stocks": sorted(stocks, key=lambda s: s["c"])}
 
 
@@ -193,7 +273,20 @@ def main():
                 have.add(x)
                 print("backfilled", x, len(got))
     save_hist(rows)
-    screen = build_screen(rows, fetch_inst(date), date)
+    extra = {}
+    for fn in (fetch_fund, fetch_rev, fetch_margin):
+        try:
+            for code, v in fn().items():
+                extra.setdefault(code, {}).update(v)
+        except Exception as e:
+            print("extra failed:", fn.__name__, e, file=sys.stderr)
+    try:
+        news = update_news()
+    except Exception as e:
+        print("news failed:", e, file=sys.stderr)
+        news = {}
+    print("extra data for", len(extra), "stocks;", len(news), "with news")
+    screen = build_screen(rows, fetch_inst(date), date, extra, news)
     (DATA / "screen.json").write_text(json.dumps(screen, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
     print("done", date, len(screen["stocks"]), "stocks")
 
