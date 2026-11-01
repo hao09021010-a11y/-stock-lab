@@ -1,0 +1,22 @@
+name: update-data
+on:
+  schedule:
+    - cron: "30 7 * * 1-5"   # 台灣時間 15:30（週一到週五）
+  workflow_dispatch:          # 也可以手動執行
+permissions:
+  contents: write
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install requests
+      - run: python scripts/build_data.py
+      - run: |
+          git config user.name "stock-lab-bot"
+          git config user.email "bot@users.noreply.github.com"
+          git add data
+          git diff --cached --quiet || (git commit -m "update data" && git push)
